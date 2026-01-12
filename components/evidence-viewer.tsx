@@ -2,13 +2,18 @@
 
 import { Download, Clipboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 type EvidenceViewerProps = {
   data: unknown;
   fileName?: string;
 };
 
-export function EvidenceViewer({ data, fileName = "evidence.json" }: EvidenceViewerProps) {
+export function EvidenceViewer({
+  data,
+  fileName = "evidence.json",
+}: EvidenceViewerProps) {
+  const { toast } = useToast();
   const json = JSON.stringify(data, null, 2);
 
   const handleDownload = () => {
@@ -23,6 +28,10 @@ export function EvidenceViewer({ data, fileName = "evidence.json" }: EvidenceVie
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(json);
+    toast({
+      title: "Copy",
+      description: "Copied to clipboard.",
+    });
   };
 
   return (

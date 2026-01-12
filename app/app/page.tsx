@@ -15,13 +15,25 @@ import {
   Search,
   Settings,
   Share2,
+  Target,
   UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LimitationsCallout } from "@/components/limitations-callout";
 import { EvidenceViewer } from "@/components/evidence-viewer";
@@ -43,15 +55,26 @@ type ReportResponse = {
       }>;
     };
     sections: {
-      commonStrategies?: { bullets: string[]; evidence?: Array<Record<string, unknown>> };
+      commonStrategies?: {
+        bullets: string[];
+        evidence?: Array<Record<string, unknown>>;
+      };
       howToWin?: {
         bullets?: string[];
         evidence?: Array<Record<string, unknown>>;
-        recommendations?: Array<{ title: string; why: string; evidenceRefs: string[] }>;
+        recommendations?: Array<{
+          title: string;
+          why: string;
+          evidenceRefs: string[];
+        }>;
       };
       dataConstraints?: { bullets?: string[] };
     };
-    summary?: { executiveSummary: string; evidenceRefs: string[]; coverageNote: string };
+    summary?: {
+      executiveSummary: string;
+      evidenceRefs: string[];
+      coverageNote: string;
+    };
   };
   markdown?: string;
   evidence?: {
@@ -85,11 +108,13 @@ export default function ReportBuilderPage() {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ReportResponse | null>(null);
 
-  const limitations = response?.limitations ?? response?.report?.sections?.dataConstraints?.bullets ?? [];
+  const limitations =
+    response?.limitations ??
+    response?.report?.sections?.dataConstraints?.bullets ??
+    [];
   const hasReport = Boolean(response?.report);
 
   const teamSignals = response?.evidence?.statsSummary?.team ?? {};
-  const confidenceLevel = limitations.length === 0 ? "High Confidence" : "Limited Coverage";
 
   const executiveSummary = useMemo(() => {
     if (!response?.report) {
@@ -100,7 +125,10 @@ export default function ReportBuilderPage() {
     }
     const common = response.report.sections.commonStrategies?.bullets ?? [];
     const howToWin = response.report.sections.howToWin?.bullets ?? [];
-    return [common[0], howToWin[0]].filter(Boolean).join(" ") || "Summary unavailable.";
+    return (
+      [common[0], howToWin[0]].filter(Boolean).join(" ") ||
+      "Summary unavailable."
+    );
   }, [response]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -124,15 +152,24 @@ export default function ReportBuilderPage() {
       const data = (await res.json()) as ReportResponse;
       if (!res.ok) {
         setResponse(data);
-        toast({ title: "Report failed", description: data.error ?? "Unable to generate report." });
+        toast({
+          title: "Report failed",
+          description: data.error ?? "Unable to generate report.",
+        });
         return;
       }
 
       setResponse(data);
-      toast({ title: "Report ready", description: "Scouting report generated successfully." });
+      toast({
+        title: "Report ready",
+        description: "Scouting report generated successfully.",
+      });
     } catch (error) {
       setResponse({ error: (error as Error).message });
-      toast({ title: "Network error", description: "Unable to reach the server." });
+      toast({
+        title: "Network error",
+        description: "Unable to reach the server.",
+      });
     } finally {
       setLoading(false);
     }
@@ -140,12 +177,18 @@ export default function ReportBuilderPage() {
 
   const handleShare = async () => {
     await navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Link copied", description: "Shareable link copied to clipboard." });
+    toast({
+      title: "Link copied",
+      description: "Shareable link copied to clipboard.",
+    });
   };
 
   const handleExport = () => {
     if (!response?.markdown) {
-      toast({ title: "No report", description: "Generate a report before exporting." });
+      toast({
+        title: "No report",
+        description: "Generate a report before exporting.",
+      });
       return;
     }
     const blob = new Blob([response.markdown], { type: "text/markdown" });
@@ -159,33 +202,22 @@ export default function ReportBuilderPage() {
 
   const generatedLabel = response?.report?.meta.generatedAt
     ? formatRelativeTime(response.report.meta.generatedAt)
-    : "Not generated yet";
+    : "0";
 
   return (
     <div className="min-h-screen bg-[#0b1118] text-slate-100">
       <header className="border-b border-slate-900/80 bg-[#0b1118]/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Gamepad2 className="h-5 w-5 text-cyan-200" />
+            <Target className="h-5 w-5 text-cyan-200" />
             ScoutIQ
           </div>
           <nav className="hidden items-center gap-6 text-xs text-slate-400 lg:flex">
-            <Link href="/" className="hover:text-cyan-200">Dashboard</Link>
+            <Link href="/" className="hover:text-cyan-200">
+              Home
+            </Link>
             <span className="text-cyan-200">Reports</span>
-            <Link href="/app" className="hover:text-cyan-200">Teams</Link>
-            <Link href="/app" className="hover:text-cyan-200">Scrims</Link>
           </nav>
-          <div className="flex items-center gap-3 text-slate-300">
-            <button type="button" className="rounded-full border border-slate-800 p-2 hover:text-cyan-200">
-              <Bell className="h-4 w-4" />
-            </button>
-            <button type="button" className="rounded-full border border-slate-800 p-2 hover:text-cyan-200">
-              <Settings className="h-4 w-4" />
-            </button>
-            <button type="button" className="rounded-full border border-slate-800 p-2">
-              <UserCircle className="h-5 w-5" />
-            </button>
-          </div>
         </div>
       </header>
 
@@ -193,7 +225,9 @@ export default function ReportBuilderPage() {
         <section className="flex flex-col gap-6 rounded-2xl border border-slate-900/70 bg-[#0f1722] p-6 shadow-xl">
           <div>
             <h2 className="text-lg font-semibold">Report Builder</h2>
-            <p className="mt-1 text-xs text-slate-400">Configure parameters for your opponent analysis.</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Configure parameters for your opponent analysis.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -201,7 +235,9 @@ export default function ReportBuilderPage() {
               <label className="text-xs text-slate-400">Game Title</label>
               <select
                 value={title}
-                onChange={(event) => setTitle(event.target.value as "val" | "lol")}
+                onChange={(event) =>
+                  setTitle(event.target.value as "val" | "lol")
+                }
                 className="w-full rounded-full border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100"
               >
                 <option value="val">Valorant</option>
@@ -232,7 +268,9 @@ export default function ReportBuilderPage() {
                 min={1}
                 max={20}
                 value={lastXMatches}
-                onChange={(event) => setLastXMatches(Number(event.target.value))}
+                onChange={(event) =>
+                  setLastXMatches(Number(event.target.value))
+                }
                 className="mt-4 w-full accent-cyan-400"
               />
               <div className="mt-2 flex justify-between text-[10px] text-slate-500">
@@ -264,7 +302,9 @@ export default function ReportBuilderPage() {
                       Tournament Name Contains
                       <input
                         value={tournamentNameContains}
-                        onChange={(event) => setTournamentNameContains(event.target.value)}
+                        onChange={(event) =>
+                          setTournamentNameContains(event.target.value)
+                        }
                         className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100"
                         placeholder="Champions"
                       />
@@ -274,7 +314,11 @@ export default function ReportBuilderPage() {
               </AccordionItem>
             </Accordion>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-linear-to-r from-sky-400 to-indigo-400 text-white border rounded-full hover:scale-105"
+              disabled={loading}
+            >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Generating...
@@ -296,25 +340,27 @@ export default function ReportBuilderPage() {
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                 <span>Generated {generatedLabel}</span>
-                <span>Title: {response?.report?.meta.titleName ?? response?.report?.meta.titleId ?? "N/A"}</span>
+                <span>
+                  Title:{" "}
+                  {response?.report?.meta.titleName ??
+                    response?.report?.meta.titleId ??
+                    "N/A"}
+                </span>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={limitations.length ? "warning" : "success"}>{confidenceLevel}</Badge>
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="h-4 w-4" /> Share
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4" /> Export
-              </Button>
             </div>
           </div>
 
-          <Tabs defaultValue="report" className="mt-6">
+          <Tabs defaultValue="report" className="mt-6 ">
             <TabsList>
-              <TabsTrigger value="report">Report Analysis</TabsTrigger>
-              <TabsTrigger value="evidence">Evidence Clips</TabsTrigger>
-              <TabsTrigger value="limitations">Limitations</TabsTrigger>
+              <TabsTrigger value="report" className="cursor-pointer">
+                Report Analysis
+              </TabsTrigger>
+              <TabsTrigger value="evidence" className="cursor-pointer">
+                Evidence Clips
+              </TabsTrigger>
+              <TabsTrigger value="limitations" className="cursor-pointer">
+                Limitations
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="report" className="space-y-6">
@@ -335,9 +381,12 @@ export default function ReportBuilderPage() {
                         <Gauge className="h-5 w-5" />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <CardTitle className="text-base">Executive Summary</CardTitle>
+                        <CardTitle className="text-base text-white">
+                          Executive Summary
+                        </CardTitle>
                         <CardDescription className="text-xs text-slate-400">
-                          {response?.report?.summary?.coverageNote ?? "Evidence-backed summary from GRID metrics."}
+                          {response?.report?.summary?.coverageNote ??
+                            "Evidence-backed summary from GRID metrics."}
                         </CardDescription>
                       </div>
                     </CardHeader>
@@ -345,9 +394,17 @@ export default function ReportBuilderPage() {
                       <p>{executiveSummary}</p>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                         <span className="text-slate-500">Evidence</span>
-                        {(response?.report?.summary?.evidenceRefs ?? ["teamStatistics"]).slice(0, 3).map((ref) => (
-                          <Badge key={ref} variant="secondary">{ref}</Badge>
-                        ))}
+                        {(
+                          response?.report?.summary?.evidenceRefs ?? [
+                            "teamStatistics",
+                          ]
+                        )
+                          .slice(0, 3)
+                          .map((ref) => (
+                            <Badge key={ref} variant="secondary">
+                              {ref}
+                            </Badge>
+                          ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -356,45 +413,73 @@ export default function ReportBuilderPage() {
                     <Card className="border-slate-800/80 bg-slate-950/60">
                       <CardHeader>
                         <CardTitle className="text-sm">Team Signals</CardTitle>
-                        <CardDescription className="text-xs">Verified team metrics.</CardDescription>
+                        <CardDescription className="text-xs">
+                          Verified team metrics.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <SignalPill label="Win Rate" value={formatPercent(teamSignals.winRate)} />
-                        <SignalPill label="Kills / Series" value={formatNumber(teamSignals.killsAvg)} />
-                        <SignalPill label="Deaths / Round" value={formatNumber(teamSignals.deathsPerRound)} />
+                        <SignalPill
+                          label="Win Rate"
+                          value={formatPercent(teamSignals.winRate)}
+                        />
+                        <SignalPill
+                          label="Kills / Series"
+                          value={formatNumber(teamSignals.killsAvg)}
+                        />
+                        <SignalPill
+                          label="Deaths / Round"
+                          value={formatNumber(teamSignals.deathsPerRound)}
+                        />
                       </CardContent>
                     </Card>
 
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-slate-200">How to Win</h3>
+                      <h3 className="text-sm font-semibold text-slate-200">
+                        How to Win
+                      </h3>
                       <div className="grid gap-4">
-                        {(response?.report?.sections.howToWin?.recommendations?.length
-                          ? response.report.sections.howToWin.recommendations.map((rec, index) => ({
-                              title: rec.title,
-                              why: rec.why,
-                              evidenceRefs: rec.evidenceRefs,
-                              key: `${rec.title}-${index}`,
-                            }))
-                          : (response?.report?.sections.howToWin?.bullets ?? []).map((bullet, index) => ({
+                        {(response?.report?.sections.howToWin?.recommendations
+                          ?.length
+                          ? response.report.sections.howToWin.recommendations.map(
+                              (rec, index) => ({
+                                title: rec.title,
+                                why: rec.why,
+                                evidenceRefs: rec.evidenceRefs,
+                                key: `${rec.title}-${index}`,
+                              })
+                            )
+                          : (
+                              response?.report?.sections.howToWin?.bullets ?? []
+                            ).map((bullet, index) => ({
                               title: `Recommendation ${index + 1}`,
                               why: bullet,
                               evidenceRefs: ["teamStatistics"],
                               key: `${bullet}-${index}`,
-                            }))).map((item) => (
-                          <Card key={item.key} className="border-slate-800/80 bg-slate-950/60">
+                            }))
+                        ).map((item) => (
+                          <Card
+                            key={item.key}
+                            className="border-slate-800/80 bg-slate-950/60"
+                          >
                             <CardHeader className="flex flex-row items-center justify-between">
-                              <CardTitle className="text-sm">{item.title}</CardTitle>
+                              <CardTitle className="text-sm">
+                                {item.title}
+                              </CardTitle>
                               <Badge variant="secondary">Macro Strategy</Badge>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm text-slate-200">
                               <div>
-                                <p className="text-xs text-slate-400">Why this works</p>
+                                <p className="text-xs text-slate-400">
+                                  Why this works
+                                </p>
                                 <p className="leading-relaxed">{item.why}</p>
                               </div>
                               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                                 <span className="text-slate-500">Evidence</span>
                                 {item.evidenceRefs.slice(0, 2).map((ref) => (
-                                  <Badge key={ref} variant="secondary">{ref}</Badge>
+                                  <Badge key={ref} variant="secondary">
+                                    {ref}
+                                  </Badge>
                                 ))}
                               </div>
                             </CardContent>
@@ -410,9 +495,12 @@ export default function ReportBuilderPage() {
                         <Lock className="h-5 w-5" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm">Unlock Deep Player Tendencies</CardTitle>
+                        <CardTitle className="text-sm text-white">
+                          Limitation
+                        </CardTitle>
                         <CardDescription className="text-xs">
-                          Player-level insights require series access not available in Open Access.
+                          Player-level insights require series access not
+                          available in Open Access.
                         </CardDescription>
                       </div>
                     </CardHeader>
@@ -429,51 +517,32 @@ export default function ReportBuilderPage() {
               ) : (
                 <>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {(response?.report?.meta.seriesSample ?? []).map((series) => (
-                      <Card key={series.id} className="border-slate-800/80 bg-slate-950/60">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Series {series.id}</CardTitle>
-                          <CardDescription className="text-xs">
-                            {series.tournamentName ?? "Tournament unknown"}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="text-xs text-slate-400">
-                          <p>Start: {series.startTime ?? "Unknown"}</p>
-                          <p>Matchup: {series.opponentVs ?? "Unavailable"}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {(response?.report?.meta.seriesSample ?? []).map(
+                      (series) => (
+                        <Card
+                          key={series.id}
+                          className="border-slate-800/80 bg-slate-950/60"
+                        >
+                          <CardHeader>
+                            <CardTitle className="text-sm">
+                              Series {series.id}
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              {series.tournamentName ?? "Tournament unknown"}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="text-xs text-slate-400">
+                            <p>Start: {series.startTime ?? "Unknown"}</p>
+                            <p>Matchup: {series.opponentVs ?? "Unavailable"}</p>
+                          </CardContent>
+                        </Card>
+                      )
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        if (!response?.evidence) return;
-                        const blob = new Blob([JSON.stringify(response.evidence, null, 2)], { type: "application/json" });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement("a");
-                        link.href = url;
-                        link.download = "evidence.json";
-                        link.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                    >
-                      <Download className="h-4 w-4" /> Download Evidence
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        if (!response?.evidence) return;
-                        await navigator.clipboard.writeText(JSON.stringify(response.evidence, null, 2));
-                        toast({ title: "Copied", description: "Evidence JSON copied to clipboard." });
-                      }}
-                    >
-                      <Clipboard className="h-4 w-4" /> Copy JSON
-                    </Button>
-                  </div>
-                  {response?.evidence ? <EvidenceViewer data={response.evidence} /> : null}
+
+                  {response?.evidence ? (
+                    <EvidenceViewer data={response.evidence} />
+                  ) : null}
                 </>
               )}
             </TabsContent>

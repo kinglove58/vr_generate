@@ -1,42 +1,217 @@
 import Link from "next/link";
+import {
+  BadgeCheck,
+  BookOpen,
+  CheckCircle2,
+  Gavel,
+  Lock,
+  MessageCircle,
+  Target,
+  UserRound,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#0b1118] text-slate-100">
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-14">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" asChild>
-            <Link href="/">Back to landing</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/app">Generate Report</Link>
-          </Button>
+      <header className="border-b border-slate-900/80 bg-[#0b1118]/80 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 text-sm">
+          <div className="flex items-center gap-2 font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-cyan-200">
+              <Target className="h-4 w-4" />
+            </div>
+            ScoutIQ
+          </div>
+          <Link href="/" className="text-xs text-slate-400 hover:text-cyan-200">
+            &lt;- Back to Home
+          </Link>
         </div>
+      </header>
 
-        <Card className="border-slate-800/80 bg-slate-900/60">
-          <CardHeader>
-            <CardTitle>Terms of Service</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-slate-300">
-            <p>
-              ScoutIQ provides scouting reports based on available GRID Open Access data. Insights are informational
-              and intended to support analysis workflows.
-            </p>
-            <p>
-              By using this app, you agree to respect the underlying data provider terms and to avoid sharing or
-              redistributing restricted content.
-            </p>
-            <p>
-              Questions? Reach out at{" "}
-              <a className="text-cyan-200 underline" href="mailto:support@scoutiq.app">
-                support@scoutiq.app
+      <main className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[220px_1fr]">
+        <aside className="hidden lg:block">
+          <Card className="border-slate-800/80 bg-slate-900/60">
+            <CardHeader>
+              <CardTitle className="text-xs text-slate-400">Contents</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-xs text-slate-300">
+              <a className="block hover:text-cyan-200" href="#intro">
+                Introduction
               </a>
-              .
+              <a className="block hover:text-cyan-200" href="#responsibilities">
+                User Responsibilities
+              </a>
+              <a className="block hover:text-cyan-200" href="#usage">
+                Data Usage & Insights
+              </a>
+              <a className="block hover:text-cyan-200" href="#compliance">
+                Compliance & Restrictions
+              </a>
+              <a className="block hover:text-cyan-200" href="#liability">
+                Limitations of Liability
+              </a>
+              <a className="block hover:text-cyan-200" href="#support">
+                Support
+              </a>
+            </CardContent>
+          </Card>
+        </aside>
+
+        <section className="space-y-8">
+          <div id="intro" className="space-y-3">
+            <h1 className="text-3xl font-semibold">Terms of Service</h1>
+            <p className="text-xs text-slate-400">
+              Last Updated: November 15, 2023
             </p>
-          </CardContent>
-        </Card>
+            <p className="text-sm text-slate-300">
+              Welcome to ScoutIQ. These Terms of Service govern your access to
+              and use of the ScoutIQ platform, providing advanced esports
+              scouting reports and analytics built on GRID Open Access data. By
+              accessing our service, you agree to be bound by these terms and
+              our usage policies.
+            </p>
+          </div>
+
+          <div id="responsibilities" className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
+                <UserRound className="h-4 w-4" />
+              </div>
+              User Responsibilities
+            </div>
+            <Card className="border-slate-800/80 bg-slate-900/60">
+              <CardContent className="space-y-4 p-5 text-sm text-slate-300">
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">
+                    Professional Conduct
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    The ScoutIQ platform is intended for professional esports
+                    analysis. You agree not to misuse the service by attempting
+                    to interfere with its operation, and introducing malicious
+                    code.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div id="usage" className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
+                <BadgeCheck className="h-4 w-4" />
+              </div>
+              Data Usage & Insights
+            </div>
+            <Card className="border-slate-800/80 bg-slate-900/60">
+              <CardContent className="space-y-4 p-5 text-sm text-slate-300">
+                <p className="text-xs text-slate-400">
+                  The insights, statistics, and reports generated by ScoutIQ are
+                  informational and intended to support your analysis workflows.
+                </p>
+                <div className="space-y-3 text-xs text-slate-400">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-cyan-200" />
+                    <span>
+                      Informational use only. Do not rely on reports for
+                      critical financial decisions.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-cyan-200" />
+                    <span>
+                      Data availability depends on GRID and other providers;
+                      uninterrupted access is not guaranteed.
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div id="compliance" className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
+                <Gavel className="h-4 w-4" />
+              </div>
+              Compliance & Restrictions
+            </div>
+            <Card className="border-slate-800/80 bg-slate-900/60">
+              <CardContent className="space-y-4 p-5 text-xs text-slate-400">
+                <p>
+                  ScoutIQ operates by leveraging data provided via the GRID Open
+                  Access framework. To maintain the integrity of the ecosystem,
+                  users must adhere to strict compliance rules.
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4">
+                    <p className="text-xs font-semibold text-cyan-200">
+                      No Redistribution
+                    </p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      You may not resell, redistribute, or publicly publish raw
+                      data sets exported from ScoutIQ without explicit written
+                      permission.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4">
+                    <p className="text-xs font-semibold text-cyan-200">
+                      Provider Terms
+                    </p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      Users acknowledge and agree to respect intellectual
+                      property rights and terms of service of underlying data
+                      providers.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div id="liability" className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-200">
+                <Lock className="h-4 w-4" />
+              </div>
+              Limitations of Liability
+            </div>
+            <p className="text-xs text-slate-400">
+              To the maximum extent permitted by applicable law, ScoutIQ and its
+              affiliates shall not be liable for any indirect, incidental,
+              special, consequential, or punitive damages, including loss of
+              profits, data, use, goodwill, or other intangible losses,
+              resulting from your access to or inability to access the service.
+              The service is provided on an "AS IS" and "AS AVAILABLE" basis.
+            </p>
+          </div>
+
+          <div id="support">
+            <Card className="border-slate-800/80 bg-slate-900/60">
+              <CardContent className="flex flex-col gap-4 p-6 text-center">
+                <div className="flex items-center justify-center gap-2 text-sm font-semibold text-white">
+                  <MessageCircle className="h-4 w-4 text-cyan-200" />
+                  Questions regarding these terms?
+                </div>
+                <p className="text-xs text-slate-400">
+                  Our support team is available to clarify any aspect of our
+                  Terms of Service or Usage Policy.
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  className="hover:scale-105 mx-auto bg-linear-to-r from-sky-400 to-indigo-400 text-white"
+                >
+                  <a href="mailto:kprincejah@gmail.com">
+                    <BookOpen className="h-4 w-4" />
+                    Contact Support
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </main>
     </div>
   );
