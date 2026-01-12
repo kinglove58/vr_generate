@@ -13,7 +13,6 @@ import {
   Swords,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 const coverageRows = [
@@ -109,9 +108,9 @@ export default function LandingPage() {
             <a href="#how" className="transition hover:text-cyan-200">
               How it Works
             </a>
-            <a href="#coverage" className="transition hover:text-cyan-200">
-              Data Coverage
-            </a>
+            <Link href="/terms" className="transition hover:text-cyan-200">
+              Terms of Service
+            </Link>
           </nav>
           <Button
             asChild
@@ -391,12 +390,6 @@ export default function LandingPage() {
             <Link href="/terms" className="text-slate-400 hover:text-cyan-200">
               Terms of Service
             </Link>
-            <a
-              href="mailto:support@scoutiq.app"
-              className="text-slate-400 hover:text-cyan-200"
-            >
-              Contact
-            </a>
           </div>
         </div>
       </footer>
