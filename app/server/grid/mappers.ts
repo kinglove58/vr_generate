@@ -199,21 +199,39 @@ export function mapSeriesById(data: unknown): Series {
 function mapSeriesNode(node: z.infer<typeof seriesNodeSchema>): Series {
   const teams = (node.teams ?? [])
     .map((team) => team.baseInfo)
-    .filter(Boolean)
+    .filter((baseInfo): baseInfo is NonNullable<typeof baseInfo> => Boolean(baseInfo))
     .map((team) => ({
-      id: String(team?.id),
-      name: team?.name ?? null,
-      nameShortened: team?.nameShortened ?? null,
-      logoUrl: team?.logoUrl ?? null,
+      id: String(team.id),
+      name: team.name ?? null,
+      nameShortened: team.nameShortened ?? null,
+      logoUrl: team.logoUrl ?? null,
     }));
 
   const players = (node.players ?? [])
-    .map((player) => ("baseInfo" in player ? player.baseInfo : player))
-    .filter(Boolean)
+    .map((player) => {
+      if ("baseInfo" in player && player.baseInfo) {
+        return {
+          id: player.baseInfo.id,
+          name: player.baseInfo.name ?? null,
+          nickName: player.baseInfo.nickName ?? null,
+        };
+      }
+      if ("id" in player) {
+        return {
+          id: player.id,
+          name: player.name ?? null,
+          nickName: player.nickName ?? null,
+        };
+      }
+      return null;
+    })
+    .filter((player): player is { id: string | number; name: string | null; nickName: string | null } =>
+      Boolean(player)
+    )
     .map((player) => ({
-      id: String(player?.id),
-      name: player?.name ?? null,
-      nickName: player?.nickName ?? null,
+      id: String(player.id),
+      name: player.name,
+      nickName: player.nickName,
     }));
 
   return {

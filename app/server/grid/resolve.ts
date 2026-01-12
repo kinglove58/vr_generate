@@ -165,7 +165,7 @@ export async function resolveRecentSeriesIdsForTeam(options: {
     );
 
     const sorted = seriesList
-      .filter(Boolean)
+      .filter((s): s is Series => Boolean(s))
       .sort((a, b) => getSeriesTimestamp(b) - getSeriesTimestamp(a));
 
     if (sorted.length >= options.lastXMatches) {

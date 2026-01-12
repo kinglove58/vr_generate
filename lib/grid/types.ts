@@ -65,3 +65,15 @@ export type SeriesStatistics = {
   selectionUsed: string;
   data: Record<string, unknown>;
 };
+
+export const SeriesTypeValues = ["BEST_OF", "HOME_AND_AWAY", "SINGLE_GAME"] as const;
+export type SeriesType = (typeof SeriesTypeValues)[number];
+
+export type GridEndState = {
+  seriesId: string;
+  state: "FINISHED" | "CANCELLED" | "BYE";
+  score: {
+    home: number;
+    away: number;
+  } | null;
+};
