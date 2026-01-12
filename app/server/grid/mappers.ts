@@ -208,31 +208,8 @@ function mapSeriesNode(node: z.infer<typeof seriesNodeSchema>): Series {
     }));
 
   const players = (node.players ?? [])
-    .map((player) => {
-      if ("baseInfo" in player && player.baseInfo) {
-        return {
-          id: player.baseInfo.id,
-          name: player.baseInfo.name ?? null,
-          nickName: player.baseInfo.nickName ?? null,
-        };
-      }
-      if ("id" in player) {
-        return {
-          id: player.id,
-          name: player.name ?? null,
-          nickName: player.nickName ?? null,
-        };
-      }
-      return null;
-    })
-    .filter((player): player is { id: string | number; name: string | null; nickName: string | null } =>
-      Boolean(player)
-    )
-    .map((player) => ({
-      id: String(player.id),
-      name: player.name,
-      nickName: player.nickName,
-    }));
+    .map(normalizeSeriesPlayer)
+    .filter((player): player is SeriesPlayer => player !== null);
 
   return {
     id: String(node.id),
@@ -245,4 +222,30 @@ function mapSeriesNode(node: z.infer<typeof seriesNodeSchema>): Series {
     teams,
     players,
   };
+}
+
+function normalizeSeriesPlayer(
+  player: z.infer<typeof seriesPlayerSchema>
+): SeriesPlayer | null {
+  if ("baseInfo" in player) {
+    const info = player.baseInfo;
+    if (!info) {
+      return null;
+    }
+    return {
+      id: String(info.id),
+      name: info.name ?? null,
+      nickName: info.nickName ?? null,
+    };
+  }
+
+  if ("id" in player) {
+    return {
+      id: String(player.id),
+      name: player.name ?? null,
+      nickName: player.nickName ?? null,
+    };
+  }
+
+  return null;
 }
