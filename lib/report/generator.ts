@@ -525,15 +525,19 @@ function buildMatchLabel(series: GridSeries): string | null {
   return names.length >= 2 ? `${names[0]} vs ${names[1]}` : names[0];
 }
 
-function buildMarkdown(report: { meta: { opponentTeam: { name: string | null }; lastXMatches: number }; sections: { commonStrategies: { bullets: string[] } } }) {
+function buildMarkdown(report: {
+  meta: { opponentTeam: { name: string | null }; lastXMatches: number };
+  sections: Record<string, unknown>;
+}) {
   const lines: string[] = [];
   lines.push(`# Scouting Report: ${report.meta.opponentTeam.name ?? "Unknown"}`);
   lines.push("");
   lines.push(`- Matches analyzed: ${report.meta.lastXMatches}`);
-  if (report.sections.commonStrategies.bullets.length > 0) {
+  const commonStrategies = (report.sections as { commonStrategies?: { bullets?: string[] } }).commonStrategies;
+  if (commonStrategies?.bullets && commonStrategies.bullets.length > 0) {
     lines.push("");
     lines.push("## Key Signals");
-    report.sections.commonStrategies.bullets.slice(0, 3).forEach((bullet) => lines.push(`- ${bullet}`));
+    commonStrategies.bullets.slice(0, 3).forEach((bullet) => lines.push(`- ${bullet}`));
   }
   return lines.join("\n");
 }

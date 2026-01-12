@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { SeriesTypeValues } from "@/lib/grid/types";
-
-const seriesTypeSchema = z.enum(SeriesTypeValues);
+const seriesTypeSchema = z.enum(["ESPORTS", "SCRIM", "COMPETITIVE"]);
 
 const startTimeSchema = z
   .object({

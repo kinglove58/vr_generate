@@ -70,7 +70,7 @@ Derived:
 - Winner ids come only from explicit winner fields or winner flags.
 */
 export function normalizeEndState(raw: GridEndState, seriesIdOverride?: string): NormalizedEndState {
-  const root = isRecord(raw) ? raw : {};
+  const root: Record<string, unknown> = isRecord(raw) ? raw : {};
   const notes = new Set<string>();
   const series = pickFirstObject(root, ["series", "data.series", "payload.series", "match.series"]);
 
