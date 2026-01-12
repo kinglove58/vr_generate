@@ -16,7 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "GRID Scout | Automated Scouting Report Generator",
-  description: "Generate opponent scouting reports from official GRID data in seconds.",
+  description:
+    "Generate opponent scouting reports from official GRID data in seconds.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

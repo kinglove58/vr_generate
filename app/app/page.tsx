@@ -2,22 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Bell,
-  Clipboard,
-  Download,
-  Flame,
-  Gamepad2,
-  Gauge,
-  Loader2,
-  Lock,
-  Radar,
-  Search,
-  Settings,
-  Share2,
-  Target,
-  UserCircle,
-} from "lucide-react";
+import { Gauge, Loader2, Lock, Radar, Search, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LimitationsCallout } from "@/components/limitations-callout";
 import { EvidenceViewer } from "@/components/evidence-viewer";
 import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
 
 type ReportResponse = {
   report?: {
@@ -175,31 +161,6 @@ export default function ReportBuilderPage() {
     }
   };
 
-  const handleShare = async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: "Link copied",
-      description: "Shareable link copied to clipboard.",
-    });
-  };
-
-  const handleExport = () => {
-    if (!response?.markdown) {
-      toast({
-        title: "No report",
-        description: "Generate a report before exporting.",
-      });
-      return;
-    }
-    const blob = new Blob([response.markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "scouting-report.md";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const generatedLabel = response?.report?.meta.generatedAt
     ? formatRelativeTime(response.report.meta.generatedAt)
     : "0";
@@ -232,8 +193,11 @@ export default function ReportBuilderPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-xs text-slate-400">Game Title</label>
+              <label htmlFor="game-title" className="text-xs text-slate-400">
+                Game Title
+              </label>
               <select
+                id="game-title"
                 value={title}
                 onChange={(event) =>
                   setTitle(event.target.value as "val" | "lol")
@@ -246,10 +210,13 @@ export default function ReportBuilderPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs text-slate-400">Target Team</label>
+              <label htmlFor="target-team" className="text-xs text-slate-400">
+                Target Team
+              </label>
               <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950 px-4 py-3 text-sm">
                 <Search className="h-4 w-4 text-slate-500" />
                 <input
+                  id="target-team"
                   value={opponentTeamName}
                   onChange={(event) => setOpponentTeamName(event.target.value)}
                   className="w-full bg-transparent text-slate-100 outline-none"
@@ -263,7 +230,7 @@ export default function ReportBuilderPage() {
                 <span>Match History Depth</span>
                 <Badge variant="secondary">Last {lastXMatches} Matches</Badge>
               </div>
-              <input
+              <Input
                 type="range"
                 min={1}
                 max={20}
@@ -298,9 +265,13 @@ export default function ReportBuilderPage() {
                         ))}
                       </select>
                     </label>
-                    <label className="grid gap-2 text-xs text-slate-400">
+                    <label
+                      htmlFor="tournament-name"
+                      className="grid gap-2 text-xs text-slate-400"
+                    >
                       Tournament Name Contains
                       <input
+                        id="tournament-name"
                         value={tournamentNameContains}
                         onChange={(event) =>
                           setTournamentNameContains(event.target.value)
