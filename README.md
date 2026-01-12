@@ -8,6 +8,10 @@ Backend + core logic for Category 2, built on GRID Open Access data.
 
 ```bash
 GRID_API_KEY="YOUR_GRID_API_KEY"
+GRID_CENTRAL_URL="https://api-op.grid.gg/central-data/graphql"
+GRID_STATS_URL="https://api-op.grid.gg/statistics-feed/graphql"
+OPENAI_API_KEY="YOUR_OPENAI_KEY"
+OPENAI_MODEL="gpt-5-nano"
 ```
 
 2) Install deps and run dev server:
@@ -17,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 for the minimal test UI.
+Open http://localhost:3000 for the landing page, or http://localhost:3000/app to generate reports.
 
 ## API
 

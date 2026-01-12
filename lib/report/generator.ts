@@ -3,6 +3,8 @@ import { fetchTeamStatistics, fetchPlayerStatistics } from "@/lib/grid/stats";
 import { buildCommonStrategies, buildPlayerHighlights, buildRosterPatterns, buildHowToWin } from "@/lib/report/heuristics";
 import type { GridSeries, PlayerStatistics } from "@/lib/grid/types";
 import { mapWithConcurrency } from "@/lib/utils/concurrency";
+import { generateExecutiveSummary, type LlmSummary } from "@/lib/llm/summary";
+import { HttpError } from "@/lib/utils/fetch";
 
 export class TeamNotFoundError extends Error {
   constructor(name: string) {
@@ -28,6 +30,8 @@ export async function generateReport(input: {
   title: "val" | "lol";
   opponentTeamName: string;
   lastXMatches: number;
+  timeWindow: "LAST_MONTH" | "LAST_3_MONTHS" | "LAST_6_MONTHS" | "LAST_YEAR";
+  tournamentNameContains?: string;
 }) {
   const generatedAt = new Date().toISOString();
   const title = await resolveTitle(input.title);
@@ -42,6 +46,8 @@ export async function generateReport(input: {
     titleId: Number(title.id),
     teamId: team.id,
     lastXMatches: input.lastXMatches,
+    timeWindow: input.timeWindow,
+    tournamentNameContains: input.tournamentNameContains,
   });
 
   if (seriesData.series.length === 0) {
@@ -52,10 +58,10 @@ export async function generateReport(input: {
 
   const overallStats = await fetchTeamStatistics({
     teamId: team.id,
-    filter: { timeWindow: "LAST_6_MONTHS" },
+    filter: { timeWindow: input.timeWindow },
   });
 
-  const recentStats = await fetchRecentTeamStats(team.id, earliestStart);
+  const recentStats = await fetchRecentTeamStats(team.id, earliestStart, input.timeWindow);
 
   const gameStats = {
     mapStats: [],
@@ -87,7 +93,35 @@ export async function generateReport(input: {
     hasPlayerData,
     gameStats,
     recentStatsAvailable: Boolean(recentStats),
+    tournamentNameContains: input.tournamentNameContains,
+    tournamentMatched: seriesData.tournamentMatched,
   });
+
+  const summaryEvidenceRefs = buildEvidenceRefs(overallStats.stats);
+  const summaryInput = {
+    teamName: team.name ?? team.nameShortened ?? team.id,
+    titleName: title.name,
+    timeWindow: input.timeWindow,
+    metrics: {
+      winRate: overallStats.stats.winRate,
+      killsAvg: overallStats.stats.killsAvg,
+      deathsPerRound: overallStats.stats.deathsPerRound,
+      recentWinRate: recentStats?.stats.winRate ?? null,
+    },
+    limitations: limitations.bullets,
+    evidenceRefs: summaryEvidenceRefs.length > 0 ? summaryEvidenceRefs : ["teamStatistics"],
+  };
+
+  const summary = await buildSummary(summaryInput);
+
+  const howToWinSection =
+    summary.howToWin.length > 0
+      ? {
+          recommendations: summary.howToWin,
+          bullets: summary.howToWin.map((rec) => `${rec.title}: ${rec.why}`),
+          evidence: summary.howToWin.map((rec) => ({ evidenceRefs: rec.evidenceRefs })),
+        }
+      : howToWin;
 
   const sections: Record<string, unknown> = {
     commonStrategies,
@@ -105,7 +139,7 @@ export async function generateReport(input: {
     sections.dataConstraints = limitations;
   }
 
-  sections.howToWin = howToWin;
+  sections.howToWin = howToWinSection;
 
   const report = {
     meta: {
@@ -122,6 +156,7 @@ export async function generateReport(input: {
       })),
     },
     sections,
+    summary,
     raw: {
       central: {
         seriesIds: seriesData.series.map((series) => series.id),
@@ -143,7 +178,8 @@ export async function generateReport(input: {
   const evidence = {
     seriesIds: seriesData.series.map((series) => series.id),
     filters: {
-      timeWindow: "LAST_6_MONTHS",
+      timeWindow: input.timeWindow,
+      tournamentNameContains: input.tournamentNameContains ?? null,
       startedAt: earliestStart,
       lastXMatches: input.lastXMatches,
     },
@@ -156,7 +192,7 @@ export async function generateReport(input: {
     timestamps: { generatedAt },
   };
 
-  return { report, markdown, evidence };
+  return { report, markdown, evidence, limitations: limitations.bullets };
 }
 
 async function resolveTitle(titleKey: "val" | "lol") {
@@ -179,10 +215,16 @@ async function resolveTitle(titleKey: "val" | "lol") {
   return byAlias;
 }
 
-async function resolveRecentSeries(options: { titleId: number; teamId: string; lastXMatches: number }) {
+async function resolveRecentSeries(options: {
+  titleId: number;
+  teamId: string;
+  lastXMatches: number;
+  timeWindow: "LAST_MONTH" | "LAST_3_MONTHS" | "LAST_6_MONTHS" | "LAST_YEAR";
+  tournamentNameContains?: string;
+}) {
   const { stats, raw } = await fetchTeamStatistics({
     teamId: options.teamId,
-    filter: { timeWindow: "LAST_6_MONTHS" },
+    filter: { timeWindow: options.timeWindow },
   });
 
   const seriesIdsFromStats = stats.aggregationSeriesIds;
@@ -193,7 +235,8 @@ async function resolveRecentSeries(options: { titleId: number; teamId: string; l
   const seriesFromStats = await buildSeriesFallbackFromStats(
     options.titleId,
     seriesIdsFromStats,
-    options.lastXMatches
+    options.lastXMatches,
+    options.tournamentNameContains
   );
 
   return {
@@ -201,19 +244,27 @@ async function resolveRecentSeries(options: { titleId: number; teamId: string; l
     from: "stats",
     statsRaw: raw,
     seriesAccessLimited: true,
+    tournamentMatched: options.tournamentNameContains
+      ? seriesFromStats.some((series) =>
+          (series.tournament?.name ?? "")
+            .toLowerCase()
+            .includes(options.tournamentNameContains!.toLowerCase())
+        )
+      : true,
   };
 }
 
 async function buildSeriesFallbackFromStats(
   titleId: number,
   aggregationSeriesIds: string[],
-  limit: number
+  limit: number,
+  tournamentNameContains?: string
 ): Promise<GridSeries[]> {
   if (aggregationSeriesIds.length === 0) {
     return [];
   }
 
-  const recentSeries = await collectRecentSeriesInfo(titleId, 4);
+  const recentSeries = await collectRecentSeriesInfo(titleId, 4, tournamentNameContains);
   const aggregationSet = new Set(aggregationSeriesIds);
   const ordered: GridSeries[] = [];
   const seen = new Set<string>();
@@ -241,12 +292,16 @@ async function buildSeriesFallbackFromStats(
   return ordered;
 }
 
-async function collectRecentSeriesInfo(titleId: number, pages: number): Promise<GridSeries[]> {
+async function collectRecentSeriesInfo(
+  titleId: number,
+  pages: number,
+  tournamentNameContains?: string
+): Promise<GridSeries[]> {
   const collected: GridSeries[] = [];
   let after: string | null = null;
 
   for (let page = 0; page < pages; page += 1) {
-    const connection = await fetchAllSeries({ first: 50, after, titleId });
+    const connection = await fetchAllSeries({ first: 50, after, titleId, tournamentNameContains });
     for (const edge of connection.edges) {
       collected.push(edge.series);
     }
@@ -278,6 +333,8 @@ function buildLimitations(options: {
   hasPlayerData: boolean;
   gameStats: { selectionUsed: string };
   recentStatsAvailable: boolean;
+  tournamentNameContains?: string;
+  tournamentMatched: boolean;
 }) {
   const bullets: string[] = [];
   const evidence: Record<string, unknown>[] = [];
@@ -293,11 +350,98 @@ function buildLimitations(options: {
   }
 
   if (!options.recentStatsAvailable) {
-    bullets.push("Recent-window stats are unavailable; using LAST_6_MONTHS aggregate metrics.");
+    bullets.push("Recent-window stats are unavailable; using the selected aggregate time window.");
     evidence.push({ reason: "recentStatsUnavailable" });
   }
 
+  if (options.tournamentNameContains && !options.tournamentMatched) {
+    bullets.push("Tournament filter did not match recent series; showing latest available series instead.");
+    evidence.push({ reason: "tournamentFilterNoMatch" });
+  }
+
   return { bullets, evidence };
+}
+
+async function buildSummary(input: {
+  teamName: string;
+  titleName: string | null;
+  timeWindow: string;
+  metrics: Record<string, number | null>;
+  limitations: string[];
+  evidenceRefs: string[];
+}): Promise<LlmSummary> {
+  try {
+    return await generateExecutiveSummary(input);
+  } catch (error) {
+    logLlmError(error);
+    return buildFallbackSummary(input);
+  }
+}
+
+function buildFallbackSummary(input: {
+  teamName: string;
+  titleName: string | null;
+  timeWindow: string;
+  metrics: Record<string, number | null>;
+  limitations: string[];
+  evidenceRefs: string[];
+}): LlmSummary {
+  const signals: string[] = [];
+  if (typeof input.metrics.winRate === "number") {
+    signals.push(`Win rate ${Math.round(input.metrics.winRate)}%`);
+  }
+  if (typeof input.metrics.killsAvg === "number") {
+    signals.push(`Kills/series ${input.metrics.killsAvg.toFixed(1)}`);
+  }
+  if (typeof input.metrics.deathsPerRound === "number") {
+    signals.push(`Deaths/round ${input.metrics.deathsPerRound.toFixed(2)}`);
+  }
+
+  const summary =
+    signals.length > 0
+      ? `${input.teamName} (${input.titleName ?? "title"}) shows ${signals.join(", ")} over ${input.timeWindow}.`
+      : `${input.teamName} (${input.titleName ?? "title"}) has limited available metrics in this time window.`;
+
+  const coverageNote =
+    input.limitations.length > 0 ? input.limitations.join(" ") : "Data coverage is sufficient for team-level signals.";
+
+  return {
+    executiveSummary: summary,
+    evidenceRefs: input.evidenceRefs.length > 0 ? input.evidenceRefs : ["teamStatistics"],
+    coverageNote,
+    howToWin: [
+      {
+        title: "Exploit macro weaknesses",
+        why: "Use the available team-level metrics to pressure their known gaps while avoiding over-commitments.",
+        evidenceRefs: input.evidenceRefs.length > 0 ? input.evidenceRefs : ["teamStatistics"],
+      },
+    ],
+  };
+}
+
+function buildEvidenceRefs(stats: { winRate: number | null; killsAvg: number | null; deathsPerRound: number | null }) {
+  const refs: string[] = [];
+  if (stats.winRate !== null) refs.push("teamStatistics.game.wins.percentage");
+  if (stats.killsAvg !== null) refs.push("teamStatistics.series.kills.avg");
+  if (stats.deathsPerRound !== null) refs.push("teamStatistics.segment.deaths.avg");
+  return refs;
+}
+
+function logLlmError(error: unknown) {
+  if (error instanceof HttpError) {
+    console.warn("[LLM] Summary generation failed:", {
+      status: error.status,
+      body: error.body,
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.warn("[LLM] Summary generation failed:", error.message);
+    return;
+  }
+
+  console.warn("[LLM] Summary generation failed with unknown error");
 }
 
 async function buildPlayerStats(seriesList: GridSeries[]) {
@@ -340,14 +484,18 @@ async function buildPlayerStats(seriesList: GridSeries[]) {
   return statsList;
 }
 
-async function fetchRecentTeamStats(teamId: string, startedAt: string | null) {
+async function fetchRecentTeamStats(
+  teamId: string,
+  startedAt: string | null,
+  timeWindow: "LAST_MONTH" | "LAST_3_MONTHS" | "LAST_6_MONTHS" | "LAST_YEAR"
+) {
   if (!startedAt) {
     return null;
   }
   try {
     return await fetchTeamStatistics({
       teamId,
-      filter: { timeWindow: "LAST_6_MONTHS", startedAt: { gte: startedAt } },
+      filter: { timeWindow, startedAt: { gte: startedAt } },
     });
   } catch {
     return null;

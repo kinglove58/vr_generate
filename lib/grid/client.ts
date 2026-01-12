@@ -3,11 +3,6 @@ import { getEnv } from "@/lib/env";
 
 export type GridEndpoint = "central" | "stats";
 
-const GRID_ENDPOINTS: Record<GridEndpoint, string> = {
-  central: "https://api-op.grid.gg/central-data/graphql",
-  stats: "https://api-op.grid.gg/statistics-feed/graphql",
-};
-
 export type GraphQLErrorItem = {
   message: string;
   path?: Array<string | number>;
@@ -62,7 +57,7 @@ export type GridRequestOptions = {
 };
 
 export async function requestGrid<T>(options: GridRequestOptions): Promise<T> {
-  const { GRID_API_KEY } = getEnv();
+  const { GRID_API_KEY, GRID_CENTRAL_URL, GRID_STATS_URL } = getEnv();
   const variables = options.variables ?? {};
   const cacheKey = `${options.endpoint}:${options.query}:${JSON.stringify(variables)}`;
 
@@ -78,7 +73,9 @@ export async function requestGrid<T>(options: GridRequestOptions): Promise<T> {
   const retries = options.retries ?? 1;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const response = await fetch(GRID_ENDPOINTS[options.endpoint], {
+    const endpointUrl =
+      options.endpoint === "central" ? GRID_CENTRAL_URL : GRID_STATS_URL;
+    const response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
