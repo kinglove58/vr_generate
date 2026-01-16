@@ -12,7 +12,7 @@ const teamStatsSchema = z.object({
       aggregationSeriesIds: z.array(z.union([z.string(), z.number()])).optional().nullable(),
       game: z
         .object({
-          wins: z.object({ percent: z.number().optional().nullable() }).optional().nullable(),
+          wins: z.object({ percentage: z.number().optional().nullable() }).optional().nullable(),
         })
         .optional()
         .nullable(),
@@ -69,7 +69,7 @@ export async function computeTeamSummary(
   const parsed = teamStatsSchema.parse(data ?? {});
   const stats = parsed.teamStatistics ?? {};
 
-  const winRate = coerceNumber(stats.game?.wins?.percent ?? null);
+  const winRate = coerceNumber(stats.game?.wins?.percentage ?? null);
   const avgKillsPerSeries = coerceNumber(stats.series?.kills?.avg ?? null);
   const deathsPerRound = coerceNumber(stats.segment?.deaths?.avg ?? null);
 

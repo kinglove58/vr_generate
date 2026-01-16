@@ -62,8 +62,8 @@ const playerStatsSchema = z.object({
 });
 
 const GAME_STAT_SELECTIONS = [
-  "games { map { name } count wins { percent } } duration { avg }",
-  "games { map { name } count wins { percent } }",
+  "games { map { name } count wins { percentage } } duration { avg }",
+  "games { map { name } count wins { percentage } }",
   "games { map { name } count }",
   "maps { name count winRate }",
   "maps { name count }",
@@ -262,7 +262,7 @@ function extractMapStats(stats: Record<string, unknown>) {
     mapStats.push({
       name,
       count: toNumber(record.count ?? null),
-      winRate: toNumber((record.wins as Record<string, unknown> | undefined)?.percent ?? null),
+      winRate: toNumber((record.wins as Record<string, unknown> | undefined)?.percentage ?? null),
     });
   }
 

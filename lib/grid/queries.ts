@@ -232,7 +232,7 @@ export const TEAM_STATISTICS_QUERY_OBJECT = `
       game {
         wins {
           count
-          percent
+          percentage
         }
       }
       series {
@@ -279,7 +279,7 @@ export const TEAM_STATISTICS_QUERY_OBJECT_NO_SEGMENT = `
       game {
         wins {
           count
-          percent
+          percentage
         }
       }
       series {
@@ -358,7 +358,7 @@ export const PLAYER_STATISTICS_QUERY_OBJECT = `
       game {
         wins {
           count
-          percent
+          percentage
         }
       }
       series {

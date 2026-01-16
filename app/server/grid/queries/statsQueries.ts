@@ -4,7 +4,7 @@ export const TEAM_STATISTICS_QUERY = `
       aggregationSeriesIds
       game {
         wins {
-          percent
+          percentage
         }
       }
       series {
@@ -27,7 +27,7 @@ export const TEAM_STATISTICS_QUERY_NO_SEGMENT = `
       aggregationSeriesIds
       game {
         wins {
-          percent
+          percentage
         }
       }
       series {
@@ -52,7 +52,7 @@ export const PLAYER_STATISTICS_QUERY = `
     playerStatistics(playerId: $playerId, filter: $filter) {
       game {
         wins {
-          percent
+          percentage
         }
       }
       series {

@@ -10,7 +10,7 @@ const playerStatsSchema = z.object({
     .object({
       game: z
         .object({
-          wins: z.object({ percent: z.number().optional().nullable() }).optional().nullable(),
+          wins: z.object({ percentage: z.number().optional().nullable() }).optional().nullable(),
         })
         .optional()
         .nullable(),
@@ -75,7 +75,7 @@ export async function computePlayerTendencies(options: {
       return {
         playerId: player.id,
         name: player.name ?? null,
-        winRate: toNumber(stats.game?.wins?.percent ?? null),
+        winRate: toNumber(stats.game?.wins?.percentage ?? null),
         killsAvg: toNumber(stats.series?.kills?.avg ?? null),
         deathsAvg: toNumber(stats.series?.deaths?.avg ?? null),
       };
