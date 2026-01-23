@@ -23,9 +23,13 @@ export type LlmSummary = z.infer<typeof llmSummarySchema>;
 
 type SummaryInput = {
   teamName: string;
+  ownTeamName?: string | null;
   titleName: string | null;
   timeWindow: string;
   metrics: Record<string, number | null>;
+  ownMetrics?: Record<string, number | null> | null;
+  mapStats?: Array<{ name: string; winRate: number | null }>;
+  draftTrends?: Array<{ name: string; count: number }>;
   limitations: string[];
   evidenceRefs: string[];
 };
@@ -40,12 +44,14 @@ export async function generateExecutiveSummary(input: SummaryInput): Promise<Llm
   const { OPENAI_API_KEY, OPENAI_MODEL } = getEnv();
 
   const system = [
-    "You are an esports analyst.",
-    "Use ONLY the provided metrics and limitations.",
-    "Do not invent players, drafts, maps, or objectives.",
-    "Use only evidenceRefs from the provided list.",
+    "You are an elite esports scouting analyst.",
+    "Use provided metrics, mapStats, and draftTrends to build tactical insights.",
+    "If ownMetrics and ownTeamName are provided, perform a head-to-head comparison.",
+    "Specifically, suggest how 'ownTeamName' can beat 'teamName' by exploiting the data gaps.",
+    "If mapStats or draftTrends are present, use them to suggest specific win conditions.",
+    "Use ONLY the provided data. Do not invent details.",
     "Each howToWin item must include a short title and a 1-2 sentence why with data-backed phrasing.",
-    "Return concise, coach-friendly language.",
+    "Return concise, professional language.",
   ].join(" ");
 
   const payload = {

@@ -1,14 +1,27 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Zap, Shield, Flame, TrendingUp, Crosshair } from "lucide-react";
 
 interface MatchupHeaderProps {
   teamName: string;
   title: string;
   timeWindow: string;
   matchesCount: number;
+  archetype?: {
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+  } | null;
 }
 
-export function MatchupHeader({ teamName, title, timeWindow, matchesCount }: MatchupHeaderProps) {
+const ARCHETYPE_ICONS: Record<string, any> = {
+  Zap, Shield, Flame, TrendingUp, Crosshair
+};
+
+export function MatchupHeader({ teamName, title, timeWindow, matchesCount, archetype }: MatchupHeaderProps) {
+  const ArchetypeIcon = archetype ? ARCHETYPE_ICONS[archetype.icon] || Crosshair : null;
+
   return (
     <Card className="border-white/5 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 backdrop-blur-sm overflow-hidden mb-6">
       <CardContent className="p-6">
@@ -24,7 +37,16 @@ export function MatchupHeader({ teamName, title, timeWindow, matchesCount }: Mat
                   {title}
                 </Badge>
               </div>
-              <div className="flex flex-wrap gap-2 text-sm text-slate-400">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                {archetype && (
+                  <>
+                    <div className={`flex items-center gap-1.5 ${archetype.color} font-bold text-xs uppercase tracking-wider`}>
+                      {ArchetypeIcon && <ArchetypeIcon className="h-3 w-3" />}
+                      {archetype.name}
+                    </div>
+                    <span className="text-slate-700">•</span>
+                  </>
+                )}
                 <span>Window: <span className="text-slate-200">{timeWindow}</span></span>
                 <span>•</span>
                 <span>Matches: <span className="text-slate-200">{matchesCount}</span></span>

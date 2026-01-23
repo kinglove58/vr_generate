@@ -3,6 +3,7 @@ import { z } from "zod";
 export const scoutingReportSchema = z.object({
   title: z.enum(["val", "lol"]),
   opponentTeamName: z.string().min(2),
+  ownTeamName: z.string().min(2).optional(),
   lastXMatches: z.number().int().min(1).max(20).default(5),
   timeWindow: z.enum(["LAST_MONTH", "LAST_3_MONTHS", "LAST_6_MONTHS", "LAST_YEAR"]).default("LAST_6_MONTHS"),
   tournamentNameContains: z

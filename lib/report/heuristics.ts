@@ -15,6 +15,96 @@ export type RosterSection = { bullets: string[]; evidence: Record<string, unknow
 
 export type InsightSection = { bullets: string[]; evidence: Record<string, unknown>[] };
 
+export type TeamArchetype = {
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+};
+
+export type DraftAnalysis = {
+  picks: Array<{ name: string; count: number }>;
+  bans: Array<{ name: string; count: number }>;
+  bullets: string[];
+};
+
+export function buildDraftAnalysis(data: any): DraftAnalysis {
+  const actions = data?.seriesStatistics?.draftActions || [];
+  const picks: Array<{ name: string; count: number }> = [];
+  const bans: Array<{ name: string; count: number }> = [];
+
+  actions.forEach((action: any) => {
+    const name = action.name || "Unknown";
+    const type = String(action.type || "").toLowerCase();
+    const count = typeof action.count === "number" ? action.count : 0;
+
+    if (type.includes("pick")) {
+      picks.push({ name, count });
+    } else if (type.includes("ban")) {
+      bans.push({ name, count });
+    }
+  });
+
+  const sortedPicks = picks.sort((a, b) => b.count - a.count);
+  const topPicks = sortedPicks.slice(0, 3);
+  const bullets = topPicks.map((p) => `High priority pick: ${p.name} (${p.count} matches).`);
+
+  if (bullets.length === 0 && actions.length > 0) {
+    bullets.push("Draft data available but no clear pick patterns identified.");
+  }
+
+  return { picks: sortedPicks, bans: bans.sort((a, b) => b.count - a.count), bullets };
+}
+
+export function buildTeamArchetype(stats: TeamStatistics): TeamArchetype {
+  const wr = stats.winRate ?? 0;
+  const kps = stats.killsAvg ?? 0;
+  const dpr = stats.deathsPerRound ?? 0;
+
+  if (wr > 65 && kps > 18) {
+    return {
+      name: "The Juggernaut",
+      description: "Dominant offensive force with high win consistency.",
+      icon: "Zap",
+      color: "text-yellow-400",
+    };
+  }
+
+  if (wr > 55 && dpr < 0.7) {
+    return {
+      name: "The Iron Wall",
+      description: "Highly disciplined defense and tactical efficiency.",
+      icon: "Shield",
+      color: "text-blue-400",
+    };
+  }
+
+  if (kps > 20 && wr < 50) {
+    return {
+      name: "Glass Cannon",
+      description: "Extremely aggressive but prone to tactical collapses.",
+      icon: "Flame",
+      color: "text-orange-500",
+    };
+  }
+
+  if (wr < 40) {
+    return {
+      name: "The Underdog",
+      description: "Currently struggling but has pockets of individual brilliance.",
+      icon: "TrendingUp",
+      color: "text-slate-400",
+    };
+  }
+
+  return {
+    name: "The Balanced Tactician",
+    description: "Versatile playstyle with no major statistical weaknesses.",
+    icon: "Crosshair",
+    color: "text-emerald-400",
+  };
+}
+
 export function buildCommonStrategies(input: {
   overall: TeamStatistics;
   recent?: TeamStatistics | null;

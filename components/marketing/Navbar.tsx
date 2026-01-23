@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#0b1118]/80 backdrop-blur-md">
+    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#0b1118]/80 backdrop-blur-md no-print">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">

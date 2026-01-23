@@ -157,3 +157,50 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .no-print, 
+  nav, 
+  aside, 
+  button,
+  [role="tablist"],
+  .live-feed-ticker {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .report-card {
+    border: 1px solid #eee !important;
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  h1, h2, h3 {
+    color: black !important;
+  }
+
+  .dark {
+    --background: white !important;
+    --foreground: black !important;
+  }
+
+  #report-output {
+    display: block !important;
+  }
+
+  /* Force tabs content to show all if possible? 
+     Actually, better to just let users print what they see or give a specialized print view.
+     For now, we optimize the current view.
+  */
+}

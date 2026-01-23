@@ -1,6 +1,13 @@
 import { fetchAllSeries, fetchTitles, searchTeamsByName } from "@/lib/grid/central";
-import { fetchTeamStatistics, fetchPlayerStatistics } from "@/lib/grid/stats";
-import { buildCommonStrategies, buildPlayerHighlights, buildRosterPatterns, buildHowToWin } from "@/lib/report/heuristics";
+import { fetchTeamStatistics, fetchPlayerStatistics, fetchGameStatistics, fetchSeriesStatistics } from "@/lib/grid/stats";
+import {
+  buildCommonStrategies,
+  buildPlayerHighlights,
+  buildRosterPatterns,
+  buildHowToWin,
+  buildDraftAnalysis,
+  buildTeamArchetype,
+} from "@/lib/report/heuristics";
 import type { GridSeries, PlayerStatistics } from "@/lib/grid/types";
 import { mapWithConcurrency } from "@/lib/utils/concurrency";
 import { generateExecutiveSummary, type LlmSummary } from "@/lib/llm/summary";
@@ -29,6 +36,7 @@ const TITLE_HINTS: Record<string, { id: string; aliases: string[] }> = {
 export async function generateReport(input: {
   title: "val" | "lol";
   opponentTeamName: string;
+  ownTeamName?: string;
   lastXMatches: number;
   timeWindow: "LAST_MONTH" | "LAST_3_MONTHS" | "LAST_6_MONTHS" | "LAST_YEAR";
   tournamentNameContains?: string;
@@ -40,6 +48,12 @@ export async function generateReport(input: {
   const team = teamMatches[0];
   if (!team) {
     throw new TeamNotFoundError(input.opponentTeamName);
+  }
+
+  let ownTeam = null;
+  if (input.ownTeamName) {
+    const ownMatches = await searchTeamsByName({ query: input.ownTeamName });
+    ownTeam = ownMatches[0];
   }
 
   const seriesData = await resolveRecentSeries({
@@ -61,16 +75,42 @@ export async function generateReport(input: {
     filter: { timeWindow: input.timeWindow },
   });
 
+  let ownStats = null;
+  if (ownTeam) {
+    ownStats = await fetchTeamStatistics({
+      teamId: ownTeam.id,
+      filter: { timeWindow: input.timeWindow },
+    }).catch(() => null);
+  }
+
   const recentStats = await fetchRecentTeamStats(team.id, earliestStart, input.timeWindow);
 
-  const gameStats = {
-    mapStats: [],
-    avgDurationSeconds: null,
-    selectionUsed: "",
-  };
+  const gameStats = await fetchGameStatistics({
+    titleId: title.id,
+    filter: { teamId: team.id, timeWindow: input.timeWindow },
+  }).catch(() => ({ mapStats: [], avgDurationSeconds: null, selectionUsed: "" }));
+
+  const seriesStats = await fetchSeriesStatistics({
+    titleId: title.id,
+    filter: { teamId: team.id, timeWindow: input.timeWindow },
+  }).catch(() => ({ selectionUsed: "", data: {} }));
+
+  // Global Meta Fetch (Maximize data use)
+  const globalGameStats = await fetchGameStatistics({
+    titleId: title.id,
+    filter: { timeWindow: input.timeWindow },
+  }).catch(() => null);
+
+  const globalSeriesStats = await fetchSeriesStatistics({
+    titleId: title.id,
+    filter: { timeWindow: input.timeWindow },
+  }).catch(() => null);
 
   const hasPlayerData = seriesData.series.some((series) => series.players.length > 0);
   const playerStats = hasPlayerData ? await buildPlayerStats(seriesData.series) : [];
+
+  const archetype = buildTeamArchetype(overallStats.stats);
+  const ownArchetype = ownStats ? buildTeamArchetype(ownStats.stats) : null;
 
   const commonStrategies = buildCommonStrategies({
     overall: overallStats.stats,
@@ -80,6 +120,7 @@ export async function generateReport(input: {
   });
 
   const playerHighlights = hasPlayerData ? buildPlayerHighlights(playerStats) : null;
+  const draftAnalysis = buildDraftAnalysis(seriesStats.data);
   const rosterPatterns = hasPlayerData ? buildRosterPatterns(seriesData.series) : null;
   const howToWin = buildHowToWin({
     overall: overallStats.stats,
@@ -100,6 +141,7 @@ export async function generateReport(input: {
   const summaryEvidenceRefs = buildEvidenceRefs(overallStats.stats);
   const summaryInput = {
     teamName: team.name ?? team.nameShortened ?? team.id,
+    ownTeamName: ownTeam?.name || null,
     titleName: title.name,
     timeWindow: input.timeWindow,
     metrics: {
@@ -108,6 +150,13 @@ export async function generateReport(input: {
       deathsPerRound: overallStats.stats.deathsPerRound,
       recentWinRate: recentStats?.stats.winRate ?? null,
     },
+    ownMetrics: ownStats ? {
+      winRate: ownStats.stats.winRate,
+      killsAvg: ownStats.stats.killsAvg,
+      deathsPerRound: ownStats.stats.deathsPerRound,
+    } : null,
+    mapStats: gameStats.mapStats,
+    draftTrends: draftAnalysis.picks.slice(0, 5),
     limitations: limitations.bullets,
     evidenceRefs: summaryEvidenceRefs.length > 0 ? summaryEvidenceRefs : ["teamStatistics"],
   };
@@ -125,6 +174,7 @@ export async function generateReport(input: {
 
   const sections: Record<string, unknown> = {
     commonStrategies,
+    draftAnalysis,
   };
 
   if (playerHighlights && playerHighlights.highlights.length > 0) {
@@ -145,7 +195,8 @@ export async function generateReport(input: {
     meta: {
       titleId: title.id,
       titleName: title.name,
-      opponentTeam: { id: team.id, name: team.name ?? team.nameShortened ?? team.id },
+      opponentTeam: { id: team.id, name: team.name ?? team.nameShortened ?? team.id, archetype },
+      ownTeam: ownTeam ? { id: ownTeam.id, name: ownTeam.name ?? ownTeam.nameShortened ?? ownTeam.id, archetype: ownArchetype } : null,
       generatedAt,
       lastXMatches: input.lastXMatches,
       seriesSample: seriesData.series.map((series) => ({
@@ -157,6 +208,20 @@ export async function generateReport(input: {
     },
     sections,
     summary,
+    globalMeta: {
+      game: globalGameStats,
+      series: globalSeriesStats,
+      draft: globalSeriesStats ? buildDraftAnalysis(globalSeriesStats.data) : null,
+    },
+    comparison: ownStats ? {
+      ownTeam: { id: ownTeam!.id, name: ownTeam!.name || ownTeam!.nameShortened || ownTeam!.id },
+      opponentTeam: { id: team.id, name: team.name || team.nameShortened || team.id },
+      metrics: [
+        { label: "Win Rate", own: ownStats.stats.winRate, opponent: overallStats.stats.winRate, type: "percent" },
+        { label: "Kills/Series", own: ownStats.stats.killsAvg, opponent: overallStats.stats.killsAvg, type: "number" },
+        { label: "Deaths/Round", own: ownStats.stats.deathsPerRound, opponent: overallStats.stats.deathsPerRound, type: "number" },
+      ]
+    } : null,
     raw: {
       central: {
         seriesIds: seriesData.series.map((series) => series.id),
@@ -168,6 +233,10 @@ export async function generateReport(input: {
           selectionUsed: gameStats.selectionUsed,
           mapStats: gameStats.mapStats,
           avgDurationSeconds: gameStats.avgDurationSeconds,
+        },
+        seriesStats: {
+          selectionUsed: seriesStats.selectionUsed,
+          data: seriesStats.data,
         },
       },
     },
