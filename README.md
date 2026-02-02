@@ -1,3 +1,6 @@
+## License
+This project is licensed under the MIT License.
+
 # Automated Scouting Report Generator
 
 Backend + core logic for Category 2, built on GRID Open Access data.
