@@ -1,4 +1,5 @@
 ## License
+
 This project is licensed under the MIT License.
 
 # Automated Scouting Report Generator
@@ -7,7 +8,7 @@ Backend + core logic for Category 2, built on GRID Open Access data.
 
 ## Setup
 
-1) Create `.env.local`:
+1. Create `.env.local`:
 
 ```bash
 GRID_API_KEY="YOUR_GRID_API_KEY"
@@ -17,7 +18,7 @@ OPENAI_API_KEY="YOUR_OPENAI_KEY"
 OPENAI_MODEL="gpt-5-nano"
 ```
 
-2) Install deps and run dev server:
+2. Install deps and run dev server:
 
 ```bash
 npm install
